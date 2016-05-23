@@ -1,10 +1,5 @@
 module HSH.CommandLineParse where
 
-import Control.Monad.State
-import qualified Data.Map as Map
-
-data ShellState = ShellState { envVars :: Map.Map String String }
-
 data Operation =
   SetEnv String String
   | GetEnv String
