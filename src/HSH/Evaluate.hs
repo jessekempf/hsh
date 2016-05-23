@@ -13,20 +13,20 @@ data ShellState = ShellState { envVars :: Map.Map String String } deriving (Eq, 
 defaultShellState :: ShellState
 defaultShellState = ShellState { envVars = Map.empty }
 
-executeCommand :: Operation -> StateT ShellState IO ()
+evaluate :: ShellAST -> StateT ShellState IO ()
 
-executeCommand (SetEnv varname value) = do
+evaluate (SetEnv varname value) = do
   shellState <- get
   put shellState { envVars = Map.insert varname value $ envVars shellState }
 
-executeCommand (GetEnv varname) = do
+evaluate (GetEnv varname) = do
   env <- envVars <$> get
   lift $ putStrLn $ fromMaybe
                     ("Undefined environment variable '" ++ varname ++ "'.")
                     (Map.lookup varname env)
 
 rep :: StateT ShellState IO ()
-rep = parseLine <$> lift getLine >>= executeCommand
+rep = parseLine <$> lift getLine >>= evaluate
 
 repl :: StateT ShellState IO ()
 repl = forever rep

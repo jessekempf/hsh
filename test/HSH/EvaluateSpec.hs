@@ -10,9 +10,9 @@ import HSH.Evaluate
 
 spec :: Spec
 spec =
-  describe "executeCommand" $
+  describe "evaluate" $
     describe "setenv" $
       it "sets environment variables" $
-        execStateT (executeCommand $ SetEnv "foo" "bar") defaultShellState
+        execStateT (evaluate $ SetEnv "foo" "bar") defaultShellState
         `shouldReturn`
         ShellState { envVars = Map.singleton "foo" "bar" }
