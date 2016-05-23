@@ -17,16 +17,15 @@ Currently: None
 This is a programming exercise focused on an interactive command interpreter. I haven't much interest right now in building support for Bourne-style scriptability.
 
 ### To-Do
-1. Prefix-tree lib for the command lookup table.
-2. Basic command-line interpreter.
+1. Basic command-line interpreter.
 	1. Shell-ish parser
 	1. `ENV` var support
 	1. Trivial prompt generator
 	1. Fundamental builtins
-3. Command Look-Up Table creation from `$PATH`
-4. `rehash` builtin
-5. Smart `rehash` based on `$PATH` changes and `mtime`s of each dir named in `$PATH`
-6. Command-name tab completion
-7. Argument tab completion
-8. Output redirection
-9. Programmable prompts
+1. Command Look-Up Table creation from `$PATH`
+1. `rehash` builtin
+1. Smart `rehash` based on `$PATH` changes and `mtime`s of each dir named in `$PATH`
+1. Command-name tab completion
+1. Argument tab completion
+1. Output redirection
+1. Programmable prompts
