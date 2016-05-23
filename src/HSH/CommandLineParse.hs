@@ -5,7 +5,8 @@ import qualified Data.Map as Map
 
 data ShellState = ShellState { envVars :: Map.Map String String }
 
-data Operation = SetEnv String String
+data Operation =
+  SetEnv String String
   | GetEnv String
   | ExternalCommand String [String]
   deriving (Eq, Show)
