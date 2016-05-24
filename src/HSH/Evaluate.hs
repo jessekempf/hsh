@@ -7,6 +7,7 @@ import System.IO
 import System.Process
 
 import qualified System.Environment as SysEnv
+import qualified System.Posix.Directory as Posix
 
 import qualified Data.Map as Map
 import Data.Maybe
@@ -64,6 +65,9 @@ evaluate (GetEnv varname) = do
 
 {- showstate -}
 evaluate DebugState = get >>= lift . print
+
+{- cd -}
+evaluate (Chdir dir) = lift $ Posix.changeWorkingDirectory dir
 
 {- Invoke external commands -}
 evaluate (ExternalCommand command args) = do

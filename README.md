@@ -13,6 +13,8 @@ Well, a few reasons:
 ### Features
 * Single-command parser
 * Support for env vars through `setenv` and `getenv`
+* Settable prompts
+* Ability to `cd` and run external commands
 
 ### Misfeatures
 * Attempting to run a command that doesn't exist crashes the shell
@@ -23,14 +25,16 @@ Well, a few reasons:
 This is a programming exercise focused on an interactive command interpreter. I haven't much interest right now in building support for Bourne-style scriptability.
 
 ### To-Do List
-1. Basic command-line interpreter.
+1. (DONE)Basic command-line interpreter.
 	1. (DONE) Shell-ish parser
 	1. (DONE) `ENV` var support
 	1. (DONE) Trivial prompt generator
-	1. Fundamental builtins
+	1. (DONE) Fundamental builtins
+		1. `cd`
 1. Command Look-Up Table creation from `$PATH`
 1. `rehash` builtin
 1. Smart `rehash` based on `$PATH` changes and `mtime`s of each dir named in `$PATH`
+1. Shell variable substitution
 1. Command-name tab completion
 1. Argument tab completion
 1. Output redirection

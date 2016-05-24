@@ -12,6 +12,7 @@ spec =
       parseLine "getenv foo" `shouldBe` GetEnv "foo"
       parseLine "some command" `shouldBe` ExternalCommand "some" ["command"]
       parseLine "showstate" `shouldBe` DebugState
+      parseLine "cd newdir" `shouldBe` Chdir "newdir"
       parseLine "ls -l" `shouldBe` ExternalCommand "ls" ["-l"]
 
     -- XXX: This violates the principle of least astonishment but at least it is a
