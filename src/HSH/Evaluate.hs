@@ -16,12 +16,12 @@ import GHC.IO.Exception (ExitCode(..))
 
 data ShellState = ShellState { envVars :: Map.Map EnvVarName EnvVarValue } deriving (Eq, Show)
 
-type EnvVarName = String
-type EnvVarValue = String
-
 {-
 -- ENV var manipulation
 -}
+
+type EnvVarName = String
+type EnvVarValue = String
 
 -- | Set an environment variable. Takes a name, value, and existing state and returns a
 -- modified state.
@@ -32,7 +32,20 @@ setEnv name val shellstate =
 
 -- | The default shell state.
 defaultShellState :: ShellState
-defaultShellState = ShellState { envVars = Map.empty }
+defaultShellState = ShellState { envVars = Map.singleton "PROMPT" "haskell-sh $" }
+
+-- | Compute the shell prompt based on the current state.
+shellPrompt :: ShellState -> String
+shellPrompt ShellState{ envVars = env } =
+  prompt ++ " "
+  where
+    prompt = fromMaybe
+      "Prompt Undefined >"
+      (Map.lookup "PROMPT" env)
+
+{-
+ - Command Evaluation
+-}
 
 -- | Evaluate a shell command abstract syntax tree.
 evaluate :: ShellAST -> StateT ShellState IO ()
@@ -72,7 +85,11 @@ evaluate (ExternalCommand command args) = do
 
 -- | Read, evaluate, and print a single command.
 rep :: StateT ShellState IO ()
-rep = parseLine <$> lift getLine >>= evaluate
+rep = do
+  state <- get
+
+  lift $ putStr $ shellPrompt state
+  parseLine <$> lift getLine >>= evaluate
 
 -- | Add looping to the REP.
 repl :: StateT ShellState IO ()

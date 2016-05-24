@@ -26,7 +26,7 @@ This is a programming exercise focused on an interactive command interpreter. I 
 1. Basic command-line interpreter.
 	1. (DONE) Shell-ish parser
 	1. (DONE) `ENV` var support
-	1. Trivial prompt generator
+	1. (DONE) Trivial prompt generator
 	1. Fundamental builtins
 1. Command Look-Up Table creation from `$PATH`
 1. `rehash` builtin
