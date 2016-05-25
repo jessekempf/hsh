@@ -15,6 +15,7 @@ Well, a few reasons:
 * Support for env vars through `setenv` and `getenv`
 * Settable prompts
 * Ability to `cd` and run external commands
+* `$PATH` is consulted for command lookups; it automatically updates when `$PATH` changes or a directory on the path is changed.
 
 ### Misfeatures
 * Attempting to run a command that doesn't exist crashes the shell
@@ -31,9 +32,10 @@ This is a programming exercise focused on an interactive command interpreter. I 
 	1. (DONE) Trivial prompt generator
 	1. (DONE) Fundamental builtins
 		1. `cd`
-1. Command Look-Up Table creation from `$PATH`
-1. `rehash` builtin
-1. Smart `rehash` based on `$PATH` changes and `mtime`s of each dir named in `$PATH`
+1. (DONE) Command Look-Up Table creation from `$PATH`
+1. (DONE and removed since it's no longer needed) `rehash` builtin
+1. (DONE) Smart `rehash` based on `$PATH` changes and `mtime`s of each dir named in `$PATH`
+1. Stop crashing on command `ENOENT`s.
 1. Shell variable substitution
 1. Command-name tab completion
 1. Argument tab completion
