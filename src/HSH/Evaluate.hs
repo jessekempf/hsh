@@ -17,6 +17,7 @@ import Data.Maybe
 import Data.Foldable
 
 import GHC.IO.Exception (ExitCode(..))
+import qualified Control.Exception as Exception
 
 data ShellState = ShellState {
                     envVars :: Map.Map EnvVarName EnvVarValue,
@@ -109,20 +110,39 @@ evaluate (Chdir dir) = lift $ Posix.changeWorkingDirectory dir
 evaluate (ExternalCommand command args) = do
   currentState <- get
 
-  let executable = resolveExecutable currentState command
+  let procDesc = processDescriptor currentState command args
 
-  (_i, _o, _e, ph) <- lift $ createProcess (proc executable args) { env = Just $ Map.toList $ envVars currentState }
+  spawnResult <- lift $ attemptSpawn currentState procDesc
 
-  exitCode <- lift $ waitForProcess ph
+  case spawnResult of
+    (Left errorMessage) -> lift $ hPutStrLn stderr errorMessage
+    (Right ph) -> do
+        exitCode <- lift $ waitForProcess ph
 
-  let numericExitCode = case exitCode of
-                          ExitSuccess -> 0
-                          ExitFailure num -> num
+        let numericExitCode = case exitCode of
+                              ExitSuccess -> 0
+                              ExitFailure num -> num
 
-  let newState = setEnv "?" (show numericExitCode) currentState
+        put $ setEnv "?" (show numericExitCode) currentState
 
-  put newState
+-- Compute a 'System.Process.CreateProcess' from the current shell state, a command name, and an
+--  argv.
+processDescriptor :: ShellState -> String -> [String] -> CreateProcess
+processDescriptor currentState cmd =
+  proc executable
+  where
+    executable = resolveExecutable currentState cmd
 
+-- Attempt to spawn the described process. Will return a Right ProcessHandle on success, or Left
+--  String error message on failure.
+attemptSpawn :: ShellState -> CreateProcess -> IO (Either String ProcessHandle)
+attemptSpawn currentState procDesc =
+  Exception.handle
+    (\(Exception.SomeException exc) -> return $ Left $ "Execution failed: " ++ show exc)
+    (do
+      (_i, _o, _e, ph) <- createProcess procDesc { env = Just $ Map.toList $ envVars currentState }
+      return $ Right ph
+    )
 {- REPL Functions -}
 
 replEvaluate :: ShellAST -> StateT ShellState IO ()

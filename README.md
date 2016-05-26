@@ -35,7 +35,7 @@ This is a programming exercise focused on an interactive command interpreter. I 
 1. (DONE) Command Look-Up Table creation from `$PATH`
 1. (DONE and removed since it's no longer needed) `rehash` builtin
 1. (DONE) Smart `rehash` based on `$PATH` changes and `mtime`s of each dir named in `$PATH`
-1. Stop crashing on command `ENOENT`s.
+1. (DONE) Stop crashing on command `ENOENT`s.
 1. Shell variable substitution
 1. Command-name tab completion
 1. Argument tab completion
