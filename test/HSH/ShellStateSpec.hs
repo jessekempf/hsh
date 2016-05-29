@@ -5,12 +5,33 @@ import Test.QuickCheck
 
 import Control.Monad.State
 import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Data.Maybe
 
 import HSH.MonitoredDirectory
 import HSH.ShellState
 
+genChar :: Gen Char
+genChar = elements ['\0' .. '\xff']
+
+genUndefinedEnvVar :: ShellState -> Gen String
+genUndefinedEnvVar ShellState{envVars = env} =
+  listOf genChar `suchThat` (\str -> not (str `Set.member` definedEnvVars))
+  where
+    definedEnvVars = Set.fromList $ Map.keys env
+
 spec :: Spec
 spec = do
+  describe "setEnv" $
+    it "sets an environment variable" $ property $
+      \name val -> setEnv name val defaultShellState{envVars = Map.empty} == defaultShellState{envVars = Map.singleton name val}
+
+  describe "getEnv" $ do
+    it "retrieves environment variables set by setEnv" $ property $
+      \name val -> getEnv name (setEnv name val defaultShellState) == Just val
+    it "returns Nothing if an environment variable is unset" $ forAll (genUndefinedEnvVar defaultShellState) $
+      \name -> isNothing $ getEnv name defaultShellState
+
   describe "shellPrompt" $ do
     it "has a sensible default in case the PROMPT env var is unset." $
       shellPrompt defaultShellState { envVars = Map.empty } `shouldBe` "Prompt Undefined > "

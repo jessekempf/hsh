@@ -25,6 +25,11 @@ setEnv :: EnvVarName -> EnvVarValue -> ShellState -> ShellState
 setEnv name val shellstate =
   shellstate { envVars = Map.insert name val (envVars shellstate) }
 
+-- | Get an environment variable. Takes a name and state and attempts to return the value
+-- associated.
+getEnv :: EnvVarName -> ShellState -> Maybe EnvVarValue
+getEnv name ShellState{envVars = env} =  Map.lookup name env
+
 -- | The default shell state.
 defaultShellState :: ShellState
 defaultShellState = ShellState {
@@ -41,6 +46,22 @@ shellPrompt ShellState{ envVars = env } =
       "Prompt Undefined >"
       (Map.lookup "PROMPT" env)
 
+resolveExecutable :: ShellState -> String -> String
+resolveExecutable ShellState { pathDirs = [] } command = command
+resolveExecutable currentState command =
+  case listToMaybe $ mapMaybe (lookupCommand command) candidateDirs of
+    Just (QualifiedFilePath x) -> x
+    Nothing -> command
+  where
+    lookupCommand command mondir = Map.lookup command $ contents mondir
+    candidateDirs = pathDirs currentState
+
+
+{-
+--
+-- Impure path-expanding code
+--
+-}
 initialPathLoad :: ShellState -> IO ShellState
 initialPathLoad oldState = do
   newPathDirs <- mapM loadDirectory pathDirectories
@@ -54,13 +75,3 @@ refreshPath :: ShellState -> IO ShellState
 refreshPath oldState = do
   newPathDirs <- mapM refreshDirectory (pathDirs oldState)
   return oldState { pathDirs = newPathDirs }
-
-resolveExecutable :: ShellState -> String -> String
-resolveExecutable ShellState { pathDirs = [] } command = command
-resolveExecutable currentState command =
-  case listToMaybe $ mapMaybe (lookupCommand command) candidateDirs of
-    Just (QualifiedFilePath x) -> x
-    Nothing -> command
-  where
-    lookupCommand command mondir = Map.lookup command $ contents mondir
-    candidateDirs = pathDirs currentState
