@@ -1,7 +1,7 @@
 module HSH.Evaluate where
 
 import HSH.CommandLineParse
-import HSH.MonitoredDirectory
+import HSH.ShellState
 
 import Control.Monad
 import Control.Monad.State
@@ -12,70 +12,12 @@ import qualified System.Environment as SysEnv
 import qualified System.Posix.Directory as Posix
 
 import qualified Data.Map as Map
-import Data.List.Split
+
 import Data.Maybe
 import Data.Foldable
 
 import GHC.IO.Exception (ExitCode(..))
 import qualified Control.Exception as Exception
-
-data ShellState = ShellState {
-                    envVars :: Map.Map EnvVarName EnvVarValue,
-                    pathDirs :: [MonitoredDirectory]
-                  } deriving (Eq, Show)
-
-{-
--- ENV var manipulation
--}
-
-type EnvVarName = String
-type EnvVarValue = String
-
--- | Set an environment variable. Takes a name, value, and existing state and returns a
--- modified state.
-setEnv :: EnvVarName -> EnvVarValue -> ShellState -> ShellState
-setEnv name val shellstate =
-  shellstate { envVars = Map.insert name val (envVars shellstate) }
-
--- | The default shell state.
-defaultShellState :: ShellState
-defaultShellState = ShellState {
-    envVars = Map.fromList [("PROMPT", "haskell-sh $"), ("PATH", "/bin:/sbin")],
-    pathDirs = []
-  }
-
--- | Compute the shell prompt based on the current state.
-shellPrompt :: ShellState -> String
-shellPrompt ShellState{ envVars = env } =
-  prompt ++ " "
-  where
-    prompt = fromMaybe
-      "Prompt Undefined >"
-      (Map.lookup "PROMPT" env)
-
-initialPathLoad :: ShellState -> IO ShellState
-initialPathLoad oldState = do
-  newPathDirs <- mapM loadDirectory pathDirectories
-
-  return oldState { pathDirs = newPathDirs }
-  where
-    pathDirectories = splitOn ":" path
-    path = fromJust $ Map.lookup "PATH" $ envVars oldState
-
-refreshPath :: ShellState -> IO ShellState
-refreshPath oldState = do
-  newPathDirs <- mapM refreshDirectory (pathDirs oldState)
-  return oldState { pathDirs = newPathDirs }
-
-resolveExecutable :: ShellState -> String -> String
-resolveExecutable ShellState { pathDirs = [] } command = command
-resolveExecutable currentState command =
-  case listToMaybe $ mapMaybe (lookupCommand command) candidateDirs of
-    Just (QualifiedFilePath x) -> x
-    Nothing -> command
-  where
-    lookupCommand command mondir = Map.lookup command $ contents mondir
-    candidateDirs = pathDirs currentState
 
 {-
  - Command Evaluation
