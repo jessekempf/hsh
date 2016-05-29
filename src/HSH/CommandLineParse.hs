@@ -1,5 +1,9 @@
 module HSH.CommandLineParse where
 
+import Data.Maybe
+
+import HSH.ShellState
+
 data ShellAST =
   SetEnv String String
   | GetEnv String
@@ -15,8 +19,19 @@ operationFromString "showstate" _ = DebugState
 operationFromString "cd" [directory] = Chdir directory
 operationFromString command args = ExternalCommand command args
 
-parseLine :: String -> ShellAST
-parseLine commandLine =
-  operationFromString (head tokens) (tail tokens)
+tokenExpand :: String -> ShellState -> Maybe String
+tokenExpand ('$': '{' : str) shellstate =
+  if last str == '}'
+  then getEnv (init str) shellstate
+  else Nothing
+tokenExpand str _ = Just str
+
+expand :: [String] -> ShellState -> Maybe [String]
+expand tokens shellstate = mapM expander tokens
   where
-    tokens = words commandLine
+    expander = flip tokenExpand shellstate
+
+parseLine :: String -> ShellState -> Maybe ShellAST
+parseLine commandLine shellstate = do
+  tokens <- expand (words commandLine) shellstate
+  Just $ operationFromString (head tokens) (tail tokens)

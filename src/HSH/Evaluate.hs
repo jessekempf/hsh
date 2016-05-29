@@ -101,7 +101,11 @@ rep = do
   state <- get
 
   lift $ putStr $ shellPrompt state
-  parseLine <$> lift getLine >>= replEvaluate
+  line <- lift getLine
+
+  case parseLine line state of
+    Just x -> replEvaluate x
+    Nothing -> lift $ hPutStrLn stderr "Parsing input line failed."
 
 -- | Add looping to the REP.
 repl :: StateT ShellState IO ()
