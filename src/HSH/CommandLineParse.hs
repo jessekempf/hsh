@@ -43,25 +43,29 @@ parseLine commandLine shellstate = do
 -- Shell variable substitution code. This code is an absolute hack.
 -}
 
--- State machine to scan the input string. Its side effects include keeping an EnvVarReference
--- to the innermost-nested variable reference in the input string. For example, in ${FOO${BAR}}
--- its final state would include an EnvVarReference to `${BAR}`.
-findNextVariableReference :: String -> State (Char, Int, Bool, Maybe EnvVarReference) ()
-findNextVariableReference [] = return ()
-findNextVariableReference (char : rest) = do
-  (previousChar, currentOffset, keepConsuming, currentVarRef) <- get
+data SearchMode = Continue | Halt
 
-  if previousChar == '$' && char == '{'
-  then
-    put (char, currentOffset + 1, True, Just (EnvVarReference currentOffset currentOffset))
-  else
-    if char == '}' && keepConsuming
-    then
-      put (char, currentOffset + 1, False, Just (fromJust currentVarRef) { end = currentOffset + 1 })
-    else
-      put (char, currentOffset + 1, True, currentVarRef)
+-- Search for the first innermost variable reference and return it.
+findNextVariableReference :: String -> (Char, Int, SearchMode, Maybe EnvVarReference) -> Maybe EnvVarReference
 
-  findNextVariableReference rest
+-- Base cases: Either we run out of String to search, or we hit the first '}' in which case we
+-- immediately return the EnvVarReference.
+findNextVariableReference [] ('}', _, _, varRef) = varRef
+findNextVariableReference [] (_, _, _, _) = Nothing
+findNextVariableReference _ (_, _, Halt, varRef) = varRef
+
+-- We've just seen '${' so make a note of it.
+findNextVariableReference ('{' : rest ) ('$', currentOffset, _, _) =
+  findNextVariableReference rest ('{', currentOffset + 1, Continue, Just (EnvVarReference currentOffset currentOffset))
+
+-- We've seen our first '}', which means that we've reached the end of our first-innermost
+-- variable reference.
+findNextVariableReference ('}' : rest) (_, currentOffset, Continue, currentVarRef) =
+  findNextVariableReference rest ('}', currentOffset + 1, Halt, Just (fromJust currentVarRef) { end = currentOffset + 1 })
+
+-- Keep scanning through the string.
+findNextVariableReference (char : rest) (previousChar, currentOffset, keepConsuming, currentVarRef) =
+  findNextVariableReference rest (char, currentOffset + 1, Continue, currentVarRef)
 
 variableName :: String -> EnvVarReference -> String
 variableName str (EnvVarReference start end) = take (end - start + 1) $ drop (start - 1) str
@@ -76,7 +80,7 @@ expandVariable str _ = Just str
 maybeExpandVariableReferences :: Maybe String -> ShellState -> Maybe String
 maybeExpandVariableReferences Nothing _ = Nothing
 maybeExpandVariableReferences (Just str) shellstate =
-  case innermostVarReferences of
+  case innermostVarReference of
     Just ref -> let varname = variableName str ref in
                 let expansion = expandVariable varname shellstate in
                   case expansion of
@@ -84,4 +88,4 @@ maybeExpandVariableReferences (Just str) shellstate =
                     Nothing -> Nothing
     Nothing -> Just str
   where
-    (_, _, _, innermostVarReferences) = execState (findNextVariableReference str) ('\0', 0, True, Nothing)
+    innermostVarReference = findNextVariableReference str ('\0', 0, Continue, Nothing)
