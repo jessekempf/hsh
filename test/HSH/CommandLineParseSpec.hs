@@ -9,13 +9,18 @@ spec :: Spec
 spec = do
   let testEnv = setEnv "FOO" "BAR" defaultShellState
 
-  describe "token expander" $ do
+  describe "variable expander" $ do
     it "maps FOO to FOO" $
-      tokenExpand "FOO" defaultShellState `shouldBe` Just "FOO"
+      expandVariables "FOO" defaultShellState `shouldBe` Just "FOO"
     it "maps ${FOO} to BAR" $
-      tokenExpand "${FOO}" testEnv `shouldBe` Just "BAR"
+      expandVariables "${FOO}" testEnv `shouldBe` Just "BAR"
+    it "maps quux${FOO}baz to quuxBARbaz" $
+      expandVariables "quux${FOO}baz" testEnv `shouldBe` Just "quuxBARbaz"
+    it "allows nesting variable references" $ do
+      let nestedEnv = setEnv "BAZ" "FOO" testEnv
+      expandVariables "${${BAZ}}" nestedEnv `shouldBe` Just "BAR"
     it "returns Nothing for an attempt to expand an undefined variable" $
-      tokenExpand "${UNDEFINED}" defaultShellState `shouldBe` Nothing
+      expandVariables "${UNDEFINED}" defaultShellState `shouldBe` Nothing
 
   describe "line expander" $ do
     it "returns nothing if the line is syntacitcally invalid" $
