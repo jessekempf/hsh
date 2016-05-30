@@ -18,7 +18,6 @@ Well, a few reasons:
 * `$PATH` is consulted for command lookups; it automatically updates when `$PATH` changes or a directory on the path is changed.
 
 ### Misfeatures
-* Attempting to run a command that doesn't exist crashes the shell
 * Mis-invoking builtins (like `setenv foo` when the correct invocation is `setenv foo bar`) causes the shell to treat `setenv` as an external command.
 
 
@@ -26,7 +25,7 @@ Well, a few reasons:
 This is a programming exercise focused on an interactive command interpreter. I haven't much interest right now in building support for Bourne-style scriptability.
 
 ### To-Do List
-1. (DONE)Basic command-line interpreter.
+1. (DONE) Basic command-line interpreter.
 	1. (DONE) Shell-ish parser
 	1. (DONE) `ENV` var support
 	1. (DONE) Trivial prompt generator
@@ -36,8 +35,8 @@ This is a programming exercise focused on an interactive command interpreter. I 
 1. (DONE and removed since it's no longer needed) `rehash` builtin
 1. (DONE) Smart `rehash` based on `$PATH` changes and `mtime`s of each dir named in `$PATH`
 1. (DONE) Stop crashing on command `ENOENT`s.
-1. Shell variable substitution
+1. (DONE) Shell variable substitution
+1. Output redirection
 1. Command-name tab completion
 1. Argument tab completion
-1. Output redirection
 1. Programmable prompts
