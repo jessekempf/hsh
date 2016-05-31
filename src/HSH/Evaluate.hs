@@ -45,11 +45,14 @@ evaluate (GetEnv varname) = do
 {- showstate -}
 evaluate DebugState = get >>= lift . print
 
+{- showparse -}
+evaluate (ShowParse ast) = lift $ print ast
+
 {- cd -}
 evaluate (Chdir dir) = lift $ Posix.changeWorkingDirectory dir
 
 {- Invoke external commands -}
-evaluate (ExternalCommand command args) = do
+evaluate (External Command{name=command, args=args}) = do
   currentState <- get
 
   let procDesc = processDescriptor currentState command args
