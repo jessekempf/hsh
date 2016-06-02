@@ -2,11 +2,11 @@ module HSH.Evaluate where
 
 import HSH.CommandLineParse
 import HSH.ShellState
+import HSH.Exec
 
 import Control.Monad
 import Control.Monad.State
 import System.IO
-import System.Process
 
 import qualified System.Environment as SysEnv
 import qualified System.Posix.Directory as Posix
@@ -17,7 +17,6 @@ import Data.Maybe
 import Data.Foldable
 
 import GHC.IO.Exception (ExitCode(..))
-import qualified Control.Exception as Exception
 
 {-
  - Command Evaluation
@@ -52,42 +51,21 @@ evaluate (ShowParse ast) = lift $ print ast
 evaluate (Chdir dir) = lift $ Posix.changeWorkingDirectory dir
 
 {- Invoke external commands -}
-evaluate (External Command{name=command, args=args}) = do
+evaluate (External command) = do
   currentState <- get
 
-  let procDesc = processDescriptor currentState command args
+  (exitCode, messages) <- lift $ runExternalCommand command currentState
 
-  spawnResult <- lift $ attemptSpawn currentState procDesc
+  -- Report all execution errors
+  mapM_ (lift . hPutStrLn stderr) messages
 
-  case spawnResult of
-    (Left errorMessage) -> lift $ hPutStrLn stderr errorMessage
-    (Right ph) -> do
-        exitCode <- lift $ waitForProcess ph
+  -- Keep ${?} updated
+  put $ setEnv "?" (numericString exitCode) currentState
 
-        let numericExitCode = case exitCode of
-                              ExitSuccess -> 0
-                              ExitFailure num -> num
-
-        put $ setEnv "?" (show numericExitCode) currentState
-
--- Compute a 'System.Process.CreateProcess' from the current shell state, a command name, and an
---  argv.
-processDescriptor :: ShellState -> String -> [String] -> CreateProcess
-processDescriptor currentState cmd =
-  proc executable
   where
-    executable = resolveExecutable currentState cmd
+    numericString ExitSuccess = numericString (ExitFailure 0)
+    numericString (ExitFailure num) = show num
 
--- Attempt to spawn the described process. Will return a Right ProcessHandle on success, or Left
---  String error message on failure.
-attemptSpawn :: ShellState -> CreateProcess -> IO (Either String ProcessHandle)
-attemptSpawn currentState procDesc =
-  Exception.handle
-    (\(Exception.SomeException exc) -> return $ Left $ "Execution failed: " ++ show exc)
-    (do
-      (_i, _o, _e, ph) <- createProcess procDesc { env = Just $ Map.toList $ envVars currentState }
-      return $ Right ph
-    )
 {- REPL Functions -}
 
 replEvaluate :: ShellAST -> StateT ShellState IO ()

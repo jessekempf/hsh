@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     HSH.CommandLineParse
                      , HSH.Evaluate
+                     , HSH.Exec
                      , HSH.MonitoredDirectory
                      , HSH.ShellState
   build-depends:       base >= 4.7 && < 5
